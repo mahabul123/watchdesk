@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WatchDesk</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #eef3fb;
+  --bg2:       #e4ecf7;
+  --surface:   #ffffff;
+  --surface2:  #f0f5fc;
+  --border:    #d0ddf0;
+  --border2:   #bccce8;
+  --accent:    #2563eb;
+  --accent-h:  #1d4ed8;
+  --accent-s:  #dbeafe;
+  --green:     #059669;
+  --green-bg:  #d1fae5;
+  --red:       #dc2626;
+  --red-bg:    #fee2e2;
+  --text:      #0f172a;
+  --text2:     #334155;
+  --muted:     #64748b;
+  --muted2:    #94a3b8;
+  --hover:     #f1f6fd;
+  --active-bg: #dbeafe;
+  --active-tx: #1d4ed8;
+  --shadow-sm: 0 1px 3px rgba(37,99,235,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 16px rgba(37,99,235,0.10), 0 2px 6px rgba(0,0,0,0.06);
+  --shadow-lg: 0 12px 40px rgba(37,99,235,0.14), 0 4px 12px rgba(0,0,0,0.08);
+  --font:      'Inter', sans-serif;
+  --mono:      'JetBrains Mono', monospace;
+  --sidebar-w: 230px;
+  --note-w:    300px;
+  --radius:    10px;
+}
+
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); overflow: hidden; }
+
+/* ── Layout ── */
+#app { display: flex; height: 100vh; width: 100vw; }
+
+/* ── Sidebar ── */
+#sidebar {
+  width: var(--sidebar-w); min-width: var(--sidebar-w);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  z-index: 10;
+}
+
+#logo {
+  padding: 20px 18px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+  background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+}
+#logo .logo-mark {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: linear-gradient(135deg, #2563eb, #60a5fa);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.3);
+}
+#logo .logo-text { line-height: 1; }
+#logo .logo-text span { display: block; font-size: 14px; font-weight: 800; color: var(--text); letter-spacing: 0.04em; }
+#logo .logo-text small { font-size: 10px; color: var(--muted); font-weight: 500; letter-spacing: 0.02em; }
+
+#sidebar-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 16px 8px;
+}
+#sidebar-header .label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+  color: var(--muted); text-transform: uppercase;
+}
+#btn-add-watchlist {
+  width: 24px; height: 24px; border-radius: 6px;
+  background: var(--accent-s); border: none; cursor: pointer;
+  color: var(--accent); font-size: 16px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, transform 0.1s;
+}
+#btn-add-watchlist:hover { background: var(--accent); color: #fff; transform: scale(1.08); }
+
+#watchlist-tabs { flex: 1; overflow-y: auto; padding: 6px 10px 10px; }
+#watchlist-tabs::-webkit-scrollbar { width: 4px; }
+#watchlist-tabs::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.wl-tab {
+  display: flex; align-items: center;
+  padding: 8px 10px; border-radius: 8px;
+  cursor: pointer; margin-bottom: 2px;
+  transition: background 0.12s;
+  position: relative;
+}
+.wl-tab:hover { background: var(--hover); }
+.wl-tab.active { background: var(--active-bg); }
+.wl-tab .wl-icon {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--muted2); margin-right: 9px; flex-shrink: 0;
+  transition: background 0.15s;
+}
+.wl-tab.active .wl-icon { background: var(--accent); box-shadow: 0 0 6px rgba(37,99,235,0.4); }
+.wl-tab .wl-name {
+  font-size: 13px; font-weight: 600; flex: 1;
+  color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.wl-tab.active .wl-name { color: var(--active-tx); }
+.wl-tab .wl-actions { display: none; gap: 2px; flex-shrink: 0; }
+.wl-tab:hover .wl-actions, .wl-tab.active .wl-actions { display: flex; }
+.wl-action-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--muted2); font-size: 11px; padding: 3px 5px;
+  border-radius: 4px; transition: all 0.12s; line-height: 1;
+}
+.wl-action-btn:hover { color: var(--text); background: var(--border); }
+.wl-action-btn.del:hover { color: var(--red); background: var(--red-bg); }
+
+/* ── Main ── */
+#main { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
+
+/* ── Topbar ── */
+#topbar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 22px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+}
+#topbar-title {
+  font-size: 16px; font-weight: 800; flex: 1;
+  color: var(--text); letter-spacing: -0.01em;
+}
+#add-stock-form { display: flex; gap: 8px; align-items: center; }
+#input-symbol {
+  background: var(--surface2); border: 1.5px solid var(--border);
+  color: var(--text); font-family: var(--mono); font-size: 12px; font-weight: 600;
+  padding: 7px 12px; border-radius: 8px; width: 150px;
+  letter-spacing: 0.06em; outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+  text-transform: uppercase;
+}
+#input-symbol::placeholder { color: var(--muted2); font-weight: 400; letter-spacing: 0; text-transform: none; font-family: var(--font); }
+#input-symbol:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.12); }
+
+#btn-add-stock {
+  background: var(--accent); border: none; color: #fff;
+  font-family: var(--font); font-size: 12px; font-weight: 700;
+  letter-spacing: 0.04em; padding: 8px 16px; border-radius: 8px;
+  cursor: pointer; transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+}
+#btn-add-stock:hover { background: var(--accent-h); box-shadow: 0 2px 8px rgba(37,99,235,0.3); }
+#btn-add-stock:active { transform: scale(0.97); }
+#btn-add-stock:disabled { opacity: 0.5; cursor: not-allowed; }
+
+#btn-refresh {
+  background: var(--surface2); border: 1.5px solid var(--border);
+  color: var(--muted); font-size: 14px; padding: 7px 11px;
+  border-radius: 8px; cursor: pointer; transition: all 0.15s;
+}
+#btn-refresh:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-s); }
+#btn-refresh.spinning { animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Content row (table + note panel) ── */
+#content-row { flex: 1; display: flex; overflow: hidden; }
+
+/* ── Stock table area ── */
+#stock-area { flex: 1; overflow-y: auto; }
+#stock-area::-webkit-scrollbar { width: 6px; }
+#stock-area::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+#stock-table { width: 100%; border-collapse: collapse; }
+#stock-table thead tr {
+  background: var(--surface2);
+  border-bottom: 1.5px solid var(--border);
+  position: sticky; top: 0; z-index: 10;
+}
+#stock-table th {
+  padding: 10px 18px; font-size: 10px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); text-align: left;
+}
+#stock-table th:last-child { text-align: right; }
+#stock-table tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+  animation: rowIn 0.18s ease both;
+}
+#stock-table tbody tr:hover { background: var(--hover); }
+#stock-table tbody tr.has-note { background: #f8fbff; }
+#stock-table tbody tr.has-note:hover { background: var(--hover); }
+#stock-table tbody tr.note-open { background: var(--active-bg) !important; }
+@keyframes rowIn { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: translateX(0); } }
+
+#stock-table td { padding: 12px 18px; font-size: 13px; vertical-align: middle; }
+.td-symbol { font-family: var(--mono); font-weight: 700; font-size: 13px; letter-spacing: 0.04em; color: var(--text); }
+.td-cmp { font-family: var(--mono); font-weight: 600; font-size: 14px; color: var(--text); }
+.change-pill {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 3px 9px; border-radius: 20px;
+  font-size: 11px; font-weight: 700; font-family: var(--mono);
+}
+.change-pill.pos { background: var(--green-bg); color: var(--green); }
+.change-pill.neg { background: var(--red-bg); color: var(--red); }
+.change-pill.neu { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+
+.td-links { display: flex; gap: 5px; align-items: center; }
+.link-btn {
+  display: inline-flex; align-items: center;
+  padding: 4px 9px; border-radius: 6px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.05em;
+  text-decoration: none; transition: all 0.15s; white-space: nowrap; border: 1.5px solid;
+}
+.link-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+.link-btn.tv  { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+.link-btn.scr { background: #f0fdf4; color: #059669; border-color: #a7f3d0; }
+.link-btn.nse { background: #fffbeb; color: #d97706; border-color: #fde68a; }
+
+.td-note-cell { min-width: 180px; }
+.note-preview {
+  display: flex; align-items: center; gap: 6px; cursor: pointer;
+  padding: 5px 8px; border-radius: 7px; transition: background 0.12s;
+  max-width: 200px;
+}
+.note-preview:hover { background: var(--active-bg); }
+.note-preview .note-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--accent); flex-shrink: 0;
+  box-shadow: 0 0 5px rgba(37,99,235,0.35);
+}
+.note-preview .note-text {
+  font-size: 11px; color: var(--muted); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; flex: 1;
+  font-style: italic;
+}
+.note-preview .note-icon {
+  font-size: 13px; color: var(--muted2); flex-shrink: 0;
+}
+.no-note-btn {
+  background: none; border: 1.5px dashed var(--border2);
+  color: var(--muted2); font-size: 11px; font-family: var(--font);
+  padding: 4px 10px; border-radius: 6px; cursor: pointer;
+  transition: all 0.15s; font-weight: 500;
+}
+.no-note-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-s); }
+
+.td-delete { text-align: right; }
+.btn-del-stock {
+  background: none; border: none; color: var(--muted2);
+  cursor: pointer; font-size: 15px; padding: 5px 7px;
+  border-radius: 6px; transition: all 0.12s; line-height: 1;
+}
+.btn-del-stock:hover { color: var(--red); background: var(--red-bg); }
+
+/* ── Note panel ── */
+#note-panel {
+  width: 0; min-width: 0; overflow: hidden;
+  background: var(--surface);
+  border-left: 1.5px solid var(--border);
+  display: flex; flex-direction: column;
+  transition: width 0.25s cubic-bezier(0.4,0,0.2,1), min-width 0.25s;
+  flex-shrink: 0;
+  box-shadow: -2px 0 12px rgba(37,99,235,0.05);
+}
+#note-panel.open { width: var(--note-w); min-width: var(--note-w); }
+
+#note-panel-header {
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+  background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+  flex-shrink: 0;
+}
+#note-symbol-label {
+  font-family: var(--mono); font-size: 14px; font-weight: 700;
+  color: var(--accent); flex: 1; letter-spacing: 0.05em;
+}
+#btn-close-note {
+  background: none; border: none; color: var(--muted);
+  font-size: 18px; cursor: pointer; padding: 2px 6px;
+  border-radius: 5px; transition: all 0.12s; line-height: 1;
+}
+#btn-close-note:hover { color: var(--text); background: var(--surface2); }
+
+#note-panel-sub {
+  padding: 10px 18px 6px;
+  font-size: 11px; color: var(--muted);
+  font-weight: 500; flex-shrink: 0;
+}
+
+#note-textarea {
+  flex: 1; resize: none;
+  border: none; outline: none;
+  padding: 10px 18px;
+  font-family: var(--font); font-size: 13px;
+  color: var(--text); line-height: 1.65;
+  background: var(--surface);
+  overflow-y: auto;
+}
+#note-textarea::placeholder { color: var(--muted2); font-style: italic; }
+#note-textarea::-webkit-scrollbar { width: 4px; }
+#note-textarea::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+#note-panel-footer {
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+  display: flex; gap: 8px; align-items: center;
+  flex-shrink: 0; background: var(--surface2);
+}
+#btn-save-note {
+  flex: 1; background: var(--accent); border: none; color: #fff;
+  font-family: var(--font); font-size: 12px; font-weight: 700;
+  padding: 8px 14px; border-radius: 8px; cursor: pointer;
+  transition: background 0.15s; letter-spacing: 0.03em;
+}
+#btn-save-note:hover { background: var(--accent-h); }
+#btn-clear-note {
+  background: none; border: 1.5px solid var(--border2);
+  color: var(--muted); font-family: var(--font); font-size: 12px; font-weight: 600;
+  padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: all 0.15s;
+}
+#btn-clear-note:hover { border-color: var(--red); color: var(--red); background: var(--red-bg); }
+#note-saved-tag {
+  font-size: 11px; color: var(--green); font-weight: 600;
+  opacity: 0; transition: opacity 0.3s; white-space: nowrap;
+}
+
+/* ── Overlays ── */
+#state-overlay {
+  display: flex; align-items: center; justify-content: center;
+  height: 100%; flex-direction: column; gap: 12px;
+  color: var(--muted); font-size: 14px;
+}
+#state-overlay .icon { font-size: 36px; opacity: 0.35; }
+#state-overlay .msg  { font-size: 13px; color: var(--muted); font-weight: 500; }
+.loader {
+  width: 28px; height: 28px;
+  border: 2.5px solid var(--border2);
+  border-top-color: var(--accent);
+  border-radius: 50%; animation: spin 0.7s linear infinite;
+}
+
+/* ── Config banner ── */
+#config-banner {
+  display: none; background: #fffbeb;
+  border-bottom: 1px solid #fde68a;
+  padding: 10px 22px; font-size: 12px; color: #92400e;
+  font-weight: 600; flex-shrink: 0;
+}
+#config-banner a { color: #d97706; }
+
+/* ── Modals ── */
+#modal-backdrop {
+  display: none; position: fixed; inset: 0;
+  background: rgba(15,23,42,0.3); backdrop-filter: blur(4px);
+  z-index: 100; align-items: center; justify-content: center;
+}
+#modal-backdrop.open { display: flex; }
+#modal {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 14px; padding: 28px; width: 360px;
+  box-shadow: var(--shadow-lg);
+  animation: modalIn 0.22s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes modalIn { from { opacity: 0; transform: scale(0.93) translateY(8px); } to { opacity: 1; transform: none; } }
+#modal h3 { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
+#modal .modal-sub { font-size: 12px; color: var(--muted); margin-bottom: 18px; }
+#modal input {
+  width: 100%; background: var(--surface2); border: 1.5px solid var(--border);
+  color: var(--text); font-family: var(--font); font-size: 14px;
+  padding: 10px 14px; border-radius: 9px; outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s; margin-bottom: 20px;
+}
+#modal input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.12); }
+.modal-btns { display: flex; gap: 10px; justify-content: flex-end; }
+.modal-btn {
+  padding: 9px 22px; border-radius: 8px; font-family: var(--font);
+  font-size: 13px; font-weight: 700; cursor: pointer; border: none; transition: all 0.15s;
+}
+.modal-btn.cancel { background: var(--surface2); color: var(--muted); border: 1.5px solid var(--border); }
+.modal-btn.cancel:hover { color: var(--text); border-color: var(--border2); }
+.modal-btn.confirm { background: var(--accent); color: #fff; }
+.modal-btn.confirm:hover { background: var(--accent-h); box-shadow: 0 2px 8px rgba(37,99,235,0.3); }
+.modal-btn.danger  { background: var(--red); color: #fff; }
+.modal-btn.danger:hover { background: #b91c1c; }
+
+/* ── Toast ── */
+#toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--surface); border: 1.5px solid var(--border);
+  color: var(--text); padding: 10px 18px; border-radius: 10px;
+  font-size: 13px; font-weight: 600;
+  box-shadow: var(--shadow-md); z-index: 200;
+  opacity: 0; transform: translateY(8px);
+  transition: opacity 0.2s, transform 0.2s; pointer-events: none;
+}
+#toast.show { opacity: 1; transform: translateY(0); }
+#toast.err  { border-color: var(--red); color: var(--red); background: var(--red-bg); }
+#toast.ok   { border-color: var(--green); color: var(--green); background: var(--green-bg); }
+
+/* ── Password screen ── */
+#pw-screen {
+  display: none; position: fixed; inset: 0;
+  background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 50%, #e0f2fe 100%);
+  z-index: 400; align-items: center; justify-content: center;
+}
+#pw-screen.visible { display: flex; }
+#pw-box {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 20px; padding: 44px 40px; width: 380px;
+  text-align: center; box-shadow: var(--shadow-lg);
+  animation: modalIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+#pw-box .pw-logo {
+  width: 52px; height: 52px; border-radius: 14px;
+  background: linear-gradient(135deg, #2563eb, #60a5fa);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; margin: 0 auto 20px;
+  box-shadow: 0 4px 16px rgba(37,99,235,0.3);
+}
+#pw-box h2 { font-size: 22px; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.01em; }
+#pw-box .pw-sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+#pw-input {
+  width: 100%; background: var(--surface2); border: 1.5px solid var(--border);
+  color: var(--text); font-family: var(--mono); font-size: 16px;
+  padding: 12px 16px; border-radius: 10px; outline: none; margin-bottom: 14px;
+  letter-spacing: 0.15em; text-align: center; transition: border-color 0.15s, box-shadow 0.15s;
+}
+#pw-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.12); }
+#pw-input.shake { animation: shake 0.35s ease; border-color: var(--red); }
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); } 40% { transform: translateX(8px); }
+  60% { transform: translateX(-5px); } 80% { transform: translateX(5px); }
+}
+#btn-unlock {
+  width: 100%; background: var(--accent); border: none; color: #fff;
+  font-family: var(--font); font-size: 14px; font-weight: 700;
+  padding: 13px; border-radius: 10px; cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s; letter-spacing: 0.04em;
+}
+#btn-unlock:hover { background: var(--accent-h); box-shadow: 0 4px 14px rgba(37,99,235,0.35); }
+#pw-error { margin-top: 12px; font-size: 12px; color: var(--red); min-height: 16px; font-weight: 600; }
+#pw-attempts { margin-top: 5px; font-size: 11px; color: var(--muted); min-height: 14px; }
+
+/* ── Setup screen ── */
+#setup-screen {
+  display: none; position: fixed; inset: 0;
+  background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 50%, #e0f2fe 100%);
+  z-index: 300; align-items: center; justify-content: center;
+}
+#setup-screen.visible { display: flex; }
+#setup-box {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 20px; padding: 44px 40px; width: 440px;
+  text-align: center; box-shadow: var(--shadow-lg);
+  animation: modalIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+#setup-box .setup-icon {
+  width: 52px; height: 52px; border-radius: 14px;
+  background: linear-gradient(135deg, #059669, #34d399);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; margin: 0 auto 20px;
+  box-shadow: 0 4px 16px rgba(5,150,105,0.3);
+}
+#setup-box h2 { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+#setup-box p  { font-size: 13px; color: var(--muted); margin-bottom: 28px; line-height: 1.65; }
+#setup-url-input {
+  width: 100%; background: var(--surface2); border: 1.5px solid var(--border);
+  color: var(--text); font-family: var(--mono); font-size: 11px;
+  padding: 11px 14px; border-radius: 10px; outline: none; margin-bottom: 14px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+#setup-url-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.12); }
+#btn-save-url {
+  width: 100%; background: var(--accent); border: none; color: #fff;
+  font-family: var(--font); font-size: 14px; font-weight: 700;
+  padding: 13px; border-radius: 10px; cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s; letter-spacing: 0.04em;
+}
+#btn-save-url:hover { background: var(--accent-h); box-shadow: 0 4px 14px rgba(37,99,235,0.35); }
+</style>
+</head>
+<body>
+
+<!-- Password screen -->
+<div id="pw-screen">
+  <div id="pw-box">
+    <div class="pw-logo">🔒</div>
+    <h2>WatchDesk</h2>
+    <p class="pw-sub">Enter your password to continue</p>
+    <input type="password" id="pw-input" placeholder="••••••••" autocomplete="current-password">
+    <button id="btn-unlock">Unlock →</button>
+    <div id="pw-error"></div>
+    <div id="pw-attempts"></div>
+  </div>
+</div>
+
+<!-- Setup screen -->
+<div id="setup-screen">
+  <div id="setup-box">
+    <div class="setup-icon">⚡</div>
+    <h2>Connect Apps Script</h2>
+    <p>Paste your Google Apps Script Web App URL below.<br>You only need to do this once — it's saved locally.</p>
+    <input type="text" id="setup-url-input" placeholder="https://script.google.com/macros/s/.../exec">
+    <button id="btn-save-url">Connect & Launch →</button>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app">
+  <div id="sidebar">
+    <div id="logo">
+      <div class="logo-mark">📈</div>
+      <div class="logo-text">
+        <span>WATCHDESK</span>
+        <small>Personal Watchlist</small>
+      </div>
+    </div>
+    <div id="sidebar-header">
+      <span class="label">Watchlists</span>
+      <button id="btn-add-watchlist" title="New watchlist">+</button>
+    </div>
+    <div id="watchlist-tabs"></div>
+  </div>
+
+  <div id="main">
+    <div id="config-banner">
+      ⚠ Apps Script URL not configured. <a href="#" id="link-reconfig">Click here to set it up.</a>
+    </div>
+    <div id="topbar">
+      <span id="topbar-title">Select a watchlist</span>
+      <div id="add-stock-form">
+        <input type="text" id="input-symbol" placeholder="Symbol (e.g. RELIANCE)" maxlength="30">
+        <button id="btn-add-stock">+ Add Stock</button>
+      </div>
+      <button id="btn-refresh" title="Refresh prices">↻</button>
+    </div>
+    <div id="content-row">
+      <div id="stock-area">
+        <div id="state-overlay">
+          <div class="icon">📋</div>
+          <div class="msg">Select a watchlist to view stocks</div>
+        </div>
+        <table id="stock-table" style="display:none">
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>CMP</th>
+              <th>Day %</th>
+              <th>Links</th>
+              <th>Notes</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="stock-tbody"></tbody>
+        </table>
+      </div>
+      <!-- Note panel -->
+      <div id="note-panel">
+        <div id="note-panel-header">
+          <span id="note-symbol-label">—</span>
+          <button id="btn-close-note" title="Close">✕</button>
+        </div>
+        <div id="note-panel-sub">Trade thesis, setup notes, levels…</div>
+        <textarea id="note-textarea" placeholder="Add your notes here…&#10;&#10;e.g. Stage 2 breakout, SL below ₹xxx&#10;Watch for volume confirmation&#10;Target: ₹xxx"></textarea>
+        <div id="note-panel-footer">
+          <button id="btn-save-note">Save Note</button>
+          <button id="btn-clear-note">Clear</button>
+          <span id="note-saved-tag">✓ Saved</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="modal-backdrop">
+  <div id="modal">
+    <h3 id="modal-title"></h3>
+    <p class="modal-sub" id="modal-sub"></p>
+    <input type="text" id="modal-input" placeholder="">
+    <div class="modal-btns">
+      <button class="modal-btn cancel" id="modal-cancel">Cancel</button>
+      <button class="modal-btn confirm" id="modal-confirm">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── Password ─────────────────────────────────────────────────
+// Default password: watchdesk
+// To change: run sha256("newpassword") in console and replace hash
+const PW_HASH    = "b030da7d663aca96630e24b516fc3a97de737a70ef8f897fd103200926baa478";
+const PW_SESSION = "watchdesk_auth";
+const MAX_TRIES  = 5;
+let   attempts   = 0;
+
+const pwScreen   = document.getElementById("pw-screen");
+const pwInput    = document.getElementById("pw-input");
+const btnUnlock  = document.getElementById("btn-unlock");
+const pwError    = document.getElementById("pw-error");
+const pwAttempts = document.getElementById("pw-attempts");
+
+async function sha256(str) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,"0")).join("");
+}
+
+async function tryUnlock() {
+  const val = pwInput.value;
+  if (!val) return;
+  const hash = await sha256(val);
+  if (hash === PW_HASH) {
+    sessionStorage.setItem(PW_SESSION, "1");
+    pwScreen.classList.remove("visible");
+    pwInput.value = "";
+    startApp();
+  } else {
+    attempts++;
+    pwInput.value = "";
+    pwInput.classList.add("shake");
+    setTimeout(() => pwInput.classList.remove("shake"), 400);
+    pwError.textContent = "Incorrect password.";
+    const left = MAX_TRIES - attempts;
+    pwAttempts.textContent = left > 0 ? `${left} attempt${left === 1 ? "" : "s"} remaining` : "";
+    if (attempts >= MAX_TRIES) {
+      pwError.textContent  = "Too many attempts. Refresh to try again.";
+      btnUnlock.disabled   = true;
+      pwInput.disabled     = true;
+    }
+  }
+}
+btnUnlock.addEventListener("click", tryUnlock);
+pwInput.addEventListener("keydown", e => { if (e.key === "Enter") tryUnlock(); });
+
+function checkAuth() {
+  if (sessionStorage.getItem(PW_SESSION) === "1") startApp();
+  else { pwScreen.classList.add("visible"); setTimeout(() => pwInput.focus(), 100); }
+}
+
+// ── Config ───────────────────────────────────────────────────
+const STORAGE_URL  = "watchdesk_script_url";
+const STORAGE_NOTE = "watchdesk_notes";
+let SCRIPT_URL     = localStorage.getItem(STORAGE_URL) || "";
+let notesMap       = JSON.parse(localStorage.getItem(STORAGE_NOTE) || "{}");
+
+// ── State ────────────────────────────────────────────────────
+let watchlists  = [];
+let activeWL    = null;
+let noteSymbol  = null;
+let modalAction = null;
+let modalTarget = null;
+
+// ── DOM ──────────────────────────────────────────────────────
+const setupScreen   = document.getElementById("setup-screen");
+const setupUrlInput = document.getElementById("setup-url-input");
+const btnSaveUrl    = document.getElementById("btn-save-url");
+const configBanner  = document.getElementById("config-banner");
+const linkReconfig  = document.getElementById("link-reconfig");
+const wlTabs        = document.getElementById("watchlist-tabs");
+const btnAddWL      = document.getElementById("btn-add-watchlist");
+const topbarTitle   = document.getElementById("topbar-title");
+const inputSymbol   = document.getElementById("input-symbol");
+const btnAddStock   = document.getElementById("btn-add-stock");
+const btnRefresh    = document.getElementById("btn-refresh");
+const stateOverlay  = document.getElementById("state-overlay");
+const stockTable    = document.getElementById("stock-table");
+const stockTbody    = document.getElementById("stock-tbody");
+const notePanel     = document.getElementById("note-panel");
+const noteSymLabel  = document.getElementById("note-symbol-label");
+const noteTextarea  = document.getElementById("note-textarea");
+const btnSaveNote   = document.getElementById("btn-save-note");
+const btnClearNote  = document.getElementById("btn-clear-note");
+const btnCloseNote  = document.getElementById("btn-close-note");
+const noteSavedTag  = document.getElementById("note-saved-tag");
+const modalBackdrop = document.getElementById("modal-backdrop");
+const modalTitle    = document.getElementById("modal-title");
+const modalSub      = document.getElementById("modal-sub");
+const modalInput    = document.getElementById("modal-input");
+const modalCancel   = document.getElementById("modal-cancel");
+const modalConfirm  = document.getElementById("modal-confirm");
+const toast         = document.getElementById("toast");
+
+// ── Setup ────────────────────────────────────────────────────
+function startApp() {
+  if (!SCRIPT_URL) { setupScreen.classList.add("visible"); }
+  else { loadWatchlists(); }
+}
+
+btnSaveUrl.addEventListener("click", () => {
+  const url = setupUrlInput.value.trim();
+  if (!url.startsWith("https://script.google.com")) { showToast("Enter a valid Apps Script URL", "err"); return; }
+  SCRIPT_URL = url;
+  localStorage.setItem(STORAGE_URL, url);
+  setupScreen.classList.remove("visible");
+  loadWatchlists();
+});
+
+linkReconfig.addEventListener("click", e => {
+  e.preventDefault();
+  setupUrlInput.value = SCRIPT_URL;
+  setupScreen.classList.add("visible");
+});
+
+// ── API ──────────────────────────────────────────────────────
+async function apiGet(params) {
+  const url = new URL(SCRIPT_URL);
+  Object.entries(params).forEach(([k,v]) => url.searchParams.set(k,v));
+  const res = await fetch(url.toString());
+  return res.json();
+}
+async function apiPost(body) {
+  const res = await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(body) });
+  return res.json();
+}
+
+// ── Notes (stored locally) ───────────────────────────────────
+function noteKey(wl, sym) { return `${wl}::${sym}`; }
+function getNote(wl, sym) { return notesMap[noteKey(wl, sym)] || ""; }
+function setNote(wl, sym, txt) {
+  const k = noteKey(wl, sym);
+  if (txt.trim()) notesMap[k] = txt;
+  else delete notesMap[k];
+  localStorage.setItem(STORAGE_NOTE, JSON.stringify(notesMap));
+}
+
+function openNotePanel(symbol) {
+  noteSymbol = symbol;
+  noteSymLabel.textContent = symbol;
+  noteTextarea.value = getNote(activeWL, symbol);
+  notePanel.classList.add("open");
+  noteSavedTag.style.opacity = "0";
+  // highlight row
+  document.querySelectorAll("#stock-tbody tr").forEach(tr => tr.classList.remove("note-open"));
+  const row = document.querySelector(`#stock-tbody tr[data-symbol="${symbol}"]`);
+  if (row) row.classList.add("note-open");
+  setTimeout(() => noteTextarea.focus(), 260);
+}
+
+function closeNotePanel() {
+  notePanel.classList.remove("open");
+  document.querySelectorAll("#stock-tbody tr").forEach(tr => tr.classList.remove("note-open"));
+  noteSymbol = null;
+}
+
+btnCloseNote.addEventListener("click", closeNotePanel);
+
+btnSaveNote.addEventListener("click", () => {
+  if (!noteSymbol || !activeWL) return;
+  setNote(activeWL, noteSymbol, noteTextarea.value);
+  noteSavedTag.style.opacity = "1";
+  setTimeout(() => { noteSavedTag.style.opacity = "0"; }, 2000);
+  // refresh row preview
+  const row = document.querySelector(`#stock-tbody tr[data-symbol="${noteSymbol}"]`);
+  if (row) updateNoteCell(row, noteSymbol, noteTextarea.value.trim());
+});
+
+btnClearNote.addEventListener("click", () => {
+  noteTextarea.value = "";
+  if (noteSymbol && activeWL) {
+    setNote(activeWL, noteSymbol, "");
+    const row = document.querySelector(`#stock-tbody tr[data-symbol="${noteSymbol}"]`);
+    if (row) updateNoteCell(row, noteSymbol, "");
+  }
+});
+
+// auto-save on Ctrl+S
+document.addEventListener("keydown", e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === "s" && noteSymbol) {
+    e.preventDefault(); btnSaveNote.click();
+  }
+});
+
+function updateNoteCell(row, symbol, noteText) {
+  const cell = row.querySelector(".td-note-cell");
+  if (!cell) return;
+  if (noteText) {
+    row.classList.add("has-note");
+    cell.innerHTML = `<div class="note-preview" data-symbol="${symbol}">
+      <span class="note-dot"></span>
+      <span class="note-text">${noteText.replace(/</g,"&lt;")}</span>
+      <span class="note-icon">✎</span>
+    </div>`;
+    cell.querySelector(".note-preview").addEventListener("click", () => openNotePanel(symbol));
+  } else {
+    row.classList.remove("has-note");
+    cell.innerHTML = `<button class="no-note-btn" data-symbol="${symbol}">+ Note</button>`;
+    cell.querySelector(".no-note-btn").addEventListener("click", () => openNotePanel(symbol));
+  }
+}
+
+// ── Watchlists ───────────────────────────────────────────────
+async function loadWatchlists() {
+  try {
+    const data = await apiGet({ action: "getWatchlists" });
+    if (data.error) { showToast(data.error, "err"); return; }
+    watchlists = data.watchlists || [];
+    renderTabs();
+    if (watchlists.length > 0 && !activeWL) selectWL(watchlists[0]);
+  } catch(e) {
+    showToast("Cannot reach Apps Script. Check URL.", "err");
+    configBanner.style.display = "block";
+  }
+}
+
+function renderTabs() {
+  wlTabs.innerHTML = "";
+  watchlists.forEach(name => {
+    const tab = document.createElement("div");
+    tab.className = "wl-tab" + (name === activeWL ? " active" : "");
+    tab.innerHTML = `
+      <span class="wl-icon"></span>
+      <span class="wl-name">${name}</span>
+      <div class="wl-actions">
+        <button class="wl-action-btn" data-action="rename" data-name="${name}" title="Rename">✎</button>
+        <button class="wl-action-btn del" data-action="delete" data-name="${name}" title="Delete">✕</button>
+      </div>`;
+    tab.addEventListener("click", e => {
+      if (e.target.closest(".wl-action-btn")) return;
+      selectWL(name);
+    });
+    wlTabs.appendChild(tab);
+  });
+  wlTabs.querySelectorAll(".wl-action-btn").forEach(btn => {
+    btn.addEventListener("click", e => {
+      e.stopPropagation();
+      if (btn.dataset.action === "rename") openModal("rename-wl", btn.dataset.name);
+      if (btn.dataset.action === "delete") openModal("delete-wl", btn.dataset.name);
+    });
+  });
+}
+
+function selectWL(name) {
+  activeWL = name;
+  topbarTitle.textContent = name;
+  closeNotePanel();
+  renderTabs();
+  loadStocks(name);
+}
+
+// ── Stocks ───────────────────────────────────────────────────
+async function loadStocks(name) {
+  showOverlay("loading");
+  btnRefresh.classList.add("spinning");
+  try {
+    const data = await apiGet({ action: "getStocks", watchlist: name });
+    btnRefresh.classList.remove("spinning");
+    if (data.error) { showOverlay("error", data.error); return; }
+    renderStocks(data.stocks || []);
+  } catch(e) {
+    btnRefresh.classList.remove("spinning");
+    showOverlay("error", "Failed to load stocks");
+  }
+}
+
+function renderStocks(stocks) {
+  if (stocks.length === 0) { showOverlay("empty"); return; }
+  stateOverlay.style.display = "none";
+  stockTable.style.display   = "table";
+  stockTbody.innerHTML = "";
+
+  stocks.forEach((s, i) => {
+    const tr = document.createElement("tr");
+    tr.dataset.symbol = s.symbol;
+    tr.style.animationDelay = `${i * 0.03}s`;
+
+    const cmp    = s.cmp    != null ? "₹" + Number(s.cmp).toLocaleString("en-IN", {minimumFractionDigits:2, maximumFractionDigits:2}) : "—";
+    const chg    = s.change != null ? Number(s.change).toFixed(2) : null;
+    const chgCls = chg == null ? "neu" : chg >= 0 ? "pos" : "neg";
+    const chgTxt = chg == null ? "—" : (chg >= 0 ? "▲" : "▼") + " " + Math.abs(chg) + "%";
+    const tvUrl  = `https://www.tradingview.com/chart/?symbol=NSE%3A${s.symbol}`;
+    const scrUrl = `https://www.screener.in/company/${s.symbol}/`;
+    const nseUrl = `https://www.nseindia.com/get-quotes/equity?symbol=${s.symbol}`;
+    const note   = getNote(activeWL, s.symbol);
+    if (note) tr.classList.add("has-note");
+
+    const noteHtml = note
+      ? `<div class="note-preview" data-symbol="${s.symbol}"><span class="note-dot"></span><span class="note-text">${note.replace(/</g,"&lt;")}</span><span class="note-icon">✎</span></div>`
+      : `<button class="no-note-btn" data-symbol="${s.symbol}">+ Note</button>`;
+
+    tr.innerHTML = `
+      <td class="td-symbol">${s.symbol}</td>
+      <td class="td-cmp">${cmp}</td>
+      <td><span class="change-pill ${chgCls}">${chgTxt}</span></td>
+      <td class="td-links">
+        <a class="link-btn tv"  href="${tvUrl}"  target="_blank" rel="noopener">TV</a>
+        <a class="link-btn scr" href="${scrUrl}" target="_blank" rel="noopener">SCR</a>
+        <a class="link-btn nse" href="${nseUrl}" target="_blank" rel="noopener">NSE</a>
+      </td>
+      <td class="td-note-cell">${noteHtml}</td>
+      <td class="td-delete"><button class="btn-del-stock" data-symbol="${s.symbol}" title="Remove">✕</button></td>`;
+
+    stockTbody.appendChild(tr);
+  });
+
+  stockTbody.querySelectorAll(".btn-del-stock").forEach(btn => {
+    btn.addEventListener("click", () => deleteStock(btn.dataset.symbol));
+  });
+  stockTbody.querySelectorAll(".note-preview").forEach(el => {
+    el.addEventListener("click", () => openNotePanel(el.dataset.symbol));
+  });
+  stockTbody.querySelectorAll(".no-note-btn").forEach(btn => {
+    btn.addEventListener("click", () => openNotePanel(btn.dataset.symbol));
+  });
+}
+
+function showOverlay(type, msg = "") {
+  stockTable.style.display   = "none";
+  stateOverlay.style.display = "flex";
+  const map = {
+    loading: `<div class="loader"></div><div class="msg">Fetching prices…</div>`,
+    empty:   `<div class="icon">🔭</div><div class="msg">No stocks yet — add one above.</div>`,
+    error:   `<div class="icon">⚠</div><div class="msg">${msg}</div>`,
+    default: `<div class="icon">📋</div><div class="msg">Select a watchlist to get started</div>`,
+  };
+  stateOverlay.innerHTML = map[type] || map.default;
+}
+
+// ── Add / Delete stock ───────────────────────────────────────
+btnAddStock.addEventListener("click", addStockHandler);
+inputSymbol.addEventListener("keydown", e => { if (e.key === "Enter") addStockHandler(); });
+
+async function addStockHandler() {
+  if (!activeWL) { showToast("Select a watchlist first", "err"); return; }
+  const sym = inputSymbol.value.trim().toUpperCase();
+  if (!sym) return;
+  btnAddStock.disabled = true;
+  const data = await apiPost({ action: "addStock", watchlist: activeWL, symbol: sym });
+  btnAddStock.disabled = false;
+  if (data.error) { showToast(data.error, "err"); return; }
+  inputSymbol.value = "";
+  showToast(`${sym} added`, "ok");
+  loadStocks(activeWL);
+}
+
+async function deleteStock(symbol) {
+  if (noteSymbol === symbol) closeNotePanel();
+  const data = await apiPost({ action: "deleteStock", watchlist: activeWL, symbol });
+  if (data.error) { showToast(data.error, "err"); return; }
+  // clear local note too
+  setNote(activeWL, symbol, "");
+  showToast(`${symbol} removed`, "ok");
+  loadStocks(activeWL);
+}
+
+btnRefresh.addEventListener("click", () => { if (activeWL) loadStocks(activeWL); });
+
+// ── Watchlist modals ─────────────────────────────────────────
+btnAddWL.addEventListener("click", () => openModal("add-wl"));
+
+function openModal(action, target = null) {
+  modalAction = action;
+  modalTarget = target;
+  modalInput.style.display = "block";
+  modalConfirm.className   = "modal-btn confirm";
+
+  if (action === "add-wl") {
+    modalTitle.textContent   = "New Watchlist";
+    modalSub.textContent     = "Give your watchlist a descriptive name.";
+    modalInput.value         = "";
+    modalInput.placeholder   = "e.g. Momentum, Swing, Positional…";
+    modalConfirm.textContent = "Create";
+  } else if (action === "rename-wl") {
+    modalTitle.textContent   = "Rename Watchlist";
+    modalSub.textContent     = `Currently: "${target}"`;
+    modalInput.value         = target;
+    modalInput.placeholder   = "New name";
+    modalConfirm.textContent = "Rename";
+  } else if (action === "delete-wl") {
+    modalTitle.textContent   = "Delete Watchlist?";
+    modalSub.textContent     = `"${target}" and all its stocks will be removed.`;
+    modalInput.style.display = "none";
+    modalConfirm.textContent = "Delete";
+    modalConfirm.className   = "modal-btn danger";
+  }
+
+  modalBackdrop.classList.add("open");
+  if (modalInput.style.display !== "none") setTimeout(() => modalInput.focus(), 50);
+}
+
+function closeModal() { modalBackdrop.classList.remove("open"); modalAction = null; modalTarget = null; }
+
+modalCancel.addEventListener("click", closeModal);
+modalBackdrop.addEventListener("click", e => { if (e.target === modalBackdrop) closeModal(); });
+modalInput.addEventListener("keydown", e => { if (e.key === "Enter") modalConfirm.click(); });
+
+modalConfirm.addEventListener("click", async () => {
+  if (modalAction === "add-wl") {
+    const name = modalInput.value.trim();
+    if (!name) return;
+    closeModal();
+    const data = await apiPost({ action: "addWatchlist", name });
+    if (data.error) { showToast(data.error, "err"); return; }
+    showToast(`"${name}" created`, "ok");
+    await loadWatchlists();
+    selectWL(name);
+
+  } else if (modalAction === "rename-wl") {
+    const newName = modalInput.value.trim();
+    if (!newName) return;
+    closeModal();
+    const data = await apiPost({ action: "renameWatchlist", oldName: modalTarget, newName });
+    if (data.error) { showToast(data.error, "err"); return; }
+    if (activeWL === modalTarget) activeWL = newName;
+    showToast(`Renamed to "${newName}"`, "ok");
+    await loadWatchlists();
+    if (activeWL === newName) topbarTitle.textContent = newName;
+
+  } else if (modalAction === "delete-wl") {
+    const name = modalTarget;
+    closeModal();
+    const data = await apiPost({ action: "deleteWatchlist", name });
+    if (data.error) { showToast(data.error, "err"); return; }
+    showToast(`"${name}" deleted`, "ok");
+    if (activeWL === name) { activeWL = null; closeNotePanel(); showOverlay("default"); topbarTitle.textContent = "Select a watchlist"; }
+    await loadWatchlists();
+  }
+});
+
+// ── Toast ────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type = "") {
+  toast.textContent = msg;
+  toast.className   = "show" + (type ? " " + type : "");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.className = ""; }, 2800);
+}
+
+// ── Boot ─────────────────────────────────────────────────────
+checkAuth();
+</script>
+</body>
+</html>
