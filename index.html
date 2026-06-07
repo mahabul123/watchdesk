@@ -712,17 +712,17 @@ linkReconfig.addEventListener("click", e => {
   setupScreen.classList.add("visible");
 });
 
-// ── API ──────────────────────────────────────────────────────
-async function apiGet(params) {
+// ── API (all GET to avoid CORS preflight) ────────────────────
+async function api(params) {
   const url = new URL(SCRIPT_URL);
-  Object.entries(params).forEach(([k,v]) => url.searchParams.set(k,v));
-  const res = await fetch(url.toString());
+  Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+  const res = await fetch(url.toString(), { redirect: "follow" });
+  if (!res.ok) throw new Error("HTTP " + res.status);
   return res.json();
 }
-async function apiPost(body) {
-  const res = await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(body) });
-  return res.json();
-}
+// Aliases so existing call sites work unchanged
+const apiGet  = (params) => api(params);
+const apiPost = (body)   => api(body);
 
 // ── Notes (stored locally) ───────────────────────────────────
 function noteKey(wl, sym) { return `${wl}::${sym}`; }
